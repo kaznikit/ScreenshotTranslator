@@ -1,64 +1,85 @@
 package com.example.screenshottranslator
 
-import android.app.Notification
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.app.PendingIntent.FLAG_UPDATE_CURRENT
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.PixelFormat
 import android.os.Bundle
-import android.os.PersistableBundle
+import android.view.KeyEvent
+import android.view.View
+import android.view.WindowManager
 import android.widget.RemoteViews
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import kotlinx.android.synthetic.main.notification.*
 
+
 class Notification : AppCompatActivity() {
 
-    override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
-        super.onCreate(savedInstanceState, persistentState)
+    var mTestView: View? = null
+
+    var actionName = "createScreenshot"
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
         setContentView(R.layout.notification)
 
         notification_button.setOnClickListener {
-            //Toast.makeText(this, "Pressed!", Toast.LENGTH_LONG)
-            var intent = Intent(this, Screenshot::class.java)
-            startActivity(intent)
+            val windowManager =
+                baseContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+
+            val layoutParams =
+                WindowManager.LayoutParams(WindowManager.LayoutParams.FIRST_SUB_WINDOW)
+            layoutParams.width = 300
+            layoutParams.height = 300
+
+            layoutParams.format = PixelFormat.RGBA_8888
+            layoutParams.flags = (WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                    or WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED)
+            layoutParams.token = window.decorView.rootView.windowToken
+
+            mTestView = View(this)
+            mTestView?.setBackgroundColor(Color.RED)
+
+            mTestView?.setOnKeyListener { _, keyCode, _ ->
+                if (keyCode == KeyEvent.KEYCODE_BACK) {
+                    onBackPressed()
+                }
+                true
+            }
+            windowManager.addView(mTestView, layoutParams)
         }
     }
 
-    fun setNotification(context : Context, isEnabled : Boolean){
-        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val NOTIFICATION_CHANNEL_ID = "my_channel_id_01"
-
-        if(isEnabled){
-            val rViews = RemoteViews(context.packageName, R.layout.notification)
-            val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
-
-            if(intent != null){
-                val pi = PendingIntent.getActivity(context, 0, intent, 0)
-                rViews.setOnClickPendingIntent(R.id.notification_button, pi)
+    override fun onDestroy() {
+        super.onDestroy()
+        if (mTestView != null) {
+            val windowManager =
+                baseContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            if (mTestView!!.isShown) {
+                windowManager.removeViewImmediate(mTestView)
             }
-
-            //notification channel
-            val notificationChannel = NotificationChannel(NOTIFICATION_CHANNEL_ID, "my notif", NotificationManager.IMPORTANCE_HIGH)
-            notificationChannel.description = "description"
-            notificationChannel.enableLights(true)
-            notificationChannel.lightColor = Color.RED
-            notificationChannel.vibrationPattern = longArrayOf(0, 1000, 500, 1000)
-            notificationChannel.enableVibration(true)
-            manager.createNotificationChannel(notificationChannel)
-
-            val builder = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
-            builder.setAutoCancel(true)
-                .setDefaults(Notification.DEFAULT_ALL)
-                .setContent(rViews)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setWhen(System.currentTimeMillis())
-            manager.notify(0, builder.build())
         }
-        else{
-            manager.cancel(1)
-        }
+    }
+
+    fun setNotification() {
+        var pressIntent = Intent()
+        pressIntent.action = actionName
+        var pendingScreenshot = PendingIntent.getBroadcast(applicationContext, 111, pressIntent, FLAG_UPDATE_CURRENT)
+
+        //var screenshotIntent = PendingIntent.getActivity(context, 0, pressIntent, 0)
+
+        var notification = NotificationCompat.Builder(applicationContext, "s")
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle("Screenshot")
+            .addAction(R.layout.notification, "Screenshot", pendingScreenshot)
+            .build()
+
+        val notificationManager =
+            applicationContext.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(1, notification)
     }
 }
