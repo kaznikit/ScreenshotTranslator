@@ -1,8 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/screenshot_frame"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:background="@drawable/layout_border"
-    android:layout_gravity="center"/>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center">
+
+    <ImageView
+        android:id="@+id/screenshot_imageview"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:background="@drawable/ic_scissors"/>
+
+    <FrameLayout
+        android:id="@+id/screenshot_frame"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/layout_border"
+        android:visibility="gone"/>
+</LinearLayout>
