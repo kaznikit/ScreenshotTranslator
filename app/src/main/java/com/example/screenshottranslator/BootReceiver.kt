@@ -9,25 +9,21 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.graphics.Rect
+import android.media.projection.MediaProjectionManager
 import android.os.Environment
 import android.os.Handler
-import android.util.Log
 import android.view.*
 import android.view.MotionEvent.*
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.widget.FrameLayout
-import com.google.android.gms.vision.Frame
-import com.google.android.gms.vision.text.TextRecognizer
 import kotlinx.android.synthetic.main.screenshot.view.*
 import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 
 
-class BootReceiver : BroadcastReceiver() {
+class BootReceiver(var areaReceivedListener: AreaReceivedListener) : BroadcastReceiver() {
 
     var dx = 0
     var dy = 0
@@ -37,11 +33,12 @@ class BootReceiver : BroadcastReceiver() {
 
     var prevX = 0
     var prevY = 0
-    var isViewScaling = false
-
-    var frameLayout: FrameLayout? = null
 
     var packageName: String? = null
+
+    var wm : WindowManager? = null
+
+    var inflater : LayoutInflater? = null
 
     override fun onReceive(context: Context?, intent: Intent?) {
         var action = intent?.action
@@ -61,9 +58,9 @@ class BootReceiver : BroadcastReceiver() {
             )
             params.gravity = Gravity.CENTER
 
-            val wm =
-                context?.getSystemService(WINDOW_SERVICE) as WindowManager?
-            val inflater =
+            wm = context?.getSystemService(WINDOW_SERVICE) as WindowManager?
+
+            inflater =
                 context?.getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater?
             val myView: View = inflater!!.inflate(R.layout.screenshot, null)
 
@@ -116,7 +113,7 @@ class BootReceiver : BroadcastReceiver() {
                     }
                     ACTION_UP -> {
 
-                        var image =
+                        /*var image =
                             getBitmapFromView(myView.screenshot_frame, context as Activity) {
 
                                 var textRecognizer = TextRecognizer.Builder(context).build()
@@ -130,30 +127,21 @@ class BootReceiver : BroadcastReceiver() {
                                 }
 
                                 Log.d("gg", str)
-                                /*try {
-                                    var directory = context!!.filesDir
-                                    var file = getOutputMediaFile()//File(directory, "testBitmap")
-                                    var fos = FileOutputStream(file)
-                                    it.compress(Bitmap.CompressFormat.PNG, 100, fos)
-                                    fos.flush()
-                                    fos.close()
-                                    *//*.use { out ->
-                                    it.compress(
-                                        Bitmap.CompressFormat.PNG,
-                                        100,
-                                        out
-                                    ) // bmp is your Bitmap instance
-                                }*//*
-                                } catch (e: IOException) {
-                                    e.printStackTrace()
-                                }*/
-                            }//Bitmap.createBitmap(myView.screenshot_frame.width, myView.screenshot_frame.height, Bitmap.Config.ARGB_8888)
+                            }*/
+
+                        //areaReceivedListener.areaReceived(v.width, v.height)
+                        var int = Intent()
+                        int.setClassName(packageName!!, "com.example.screenshottranslator.TestActivity")
+                        int.flags = Intent.FLAG_ACTIVITY_NEW_TASK// and Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        context.startActivity(int)
 
                         myView.screenshot_frame.visibility = GONE
                         myView.screenshot_imageview.visibility = VISIBLE
 
                         myView.screenshot_imageview.left = event.rawX.toInt() //- frameDx
                         myView.screenshot_imageview.top = event.rawY.toInt() //- frameDy
+
+                        wm!!.removeViewImmediate(myView)
                     }
                 }
                 true
@@ -162,6 +150,7 @@ class BootReceiver : BroadcastReceiver() {
             wm!!.addView(myView, params)
         }
     }
+
 
     /** Create a File for saving an image or video  */
     private fun getOutputMediaFile(): File? { // To be safe, you should check that the SDCard is mounted
@@ -194,6 +183,9 @@ class BootReceiver : BroadcastReceiver() {
             val locationOfViewInWindow = IntArray(2)
             view.getLocationInWindow(locationOfViewInWindow)
             try {
+
+                var display = window
+
                 PixelCopy.request(
                     window,
                     Rect(

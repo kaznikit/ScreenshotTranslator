@@ -21,7 +21,9 @@
         </activity>
         <activity android:name=".Screenshot"/>
         <activity android:name=".Notification"/>
-
+        <activity android:name=".TestActivity"
+            android:theme="@style/Theme.Transparent"
+            android:launchMode="singleInstance"/>
         <receiver android:name=".BootReceiver">
             <intent-filter>
                 <action android:name="createScreenshot"/>
